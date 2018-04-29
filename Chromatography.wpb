@@ -1,0 +1,91 @@
+# Batch file to execute and calculate counts from iTLC strips                                                                 
+# Neil Thomson April 2018                                                                                                     
+                                                                                                                              
+# Load parameters and check we don't try too many samples (four should be plenty)                                             
+:input                                                                                                                        
+DataInput Parameters Chromatography.VAR                                                                                       
+
+# one to four samples                                                                                                         
+ShowMessage null 0 0 $samples                                                                                                
+
+if ($samples>4)                                                                                                               
+{                                                                                                                             
+    ShowMessage null 0 0 "Too many samples. Try again with four or less."                                                      
+    Goto input                                                                                                                  
+}  
+                                                                                                                           
+if ($samples<1)                                                                                                               
+{                                                                                                                             
+    ShowMessage null 0 0 "Need at least one sample. Try again."                                                                
+    Goto input                                                                                                                  
+}                                                                                                                             
+                                                                                                                              
+# Repeat for each sample
+For i=1 TO $samples
+
+    SetPar sampleName[$i] "Strip $i"
+                                                                                                                              
+    # Prepare spectrum                                                                                                            
+    ClearSpectrum $i                                                                                                               
+    DeleteAllRois $i                                                                                                               
+    SetSpectrumComment $i "Strip $i"
+    ShowWindow $i                                                                                   
+    SetHV $i $HV                                                                                                                   
+    # Use "normal" peak width factor of '1', automatically set by the software                                                    
+    MkNaiRoi $i $Energy 1                                                                                                          
+    PresetRealtime $i $RT                                                                                                          
+                                                                                                                                  
+    #showmessage null 0 0 "place sample $i in counter then press ok to proceed"                                                 
+                                                                                                                                  
+    # start counting and wait ('&') until counting finished before continuing with batch file                                     
+    startacquisition $i &                                                                                                          
+                                                                                                                                  
+    # get roi statistics about energy peak                                                                                        
+    integrate $i centroid[$i] fwhm[$i] net[$i] gros[$i] back[$i] $energy                                                                               
+                                                                                                                                  
+    sprintf grossline "gross=%.0f" $gros[$i]                                                                                          
+    sprintf netline " net=%.0f" $net[$i]                                                                                              
+    sprintf bkgline " bkg=%.0f" $back[$i]                                                                                             
+    strcat outputline $grossline $netline $bkgline                                                                                
+    showmessage null 0 0 $outputline 
+
+    eval $totalCounts+$net[$i] totalCounts %d                                                                                            
+                                                                                                                                  
+Next i                                                                                                                             
+
+# Evaluate percentages
+
+For i=1 TO $samples
+
+    eval $net[$i]/totalCounts percent[$i] %.8f
+
+Next i
+ 
+eval ln($value) result %.3f                                                                                                   
+                                                                                                                              
+showmessage null 0 0 $result                                                                                                 
+                                                                                                                              
+#datainputparameters data.var                                                                                                 
+variables                                                                                                                     
+hv %d 590                                                                                                                     
+rt %f 1                                                                                                                       
+energy %f 144                                                                                                                 
+time %b 0                                                                                                                     
+samples %d 2                                                                                                                  
+centroid %f                                                                                                                   
+fwhm[4] %f                                                                                                                    
+net[4] %f                                                                                                                     
+gros[4] %f                                                                                                                    
+back[4] %f                                                                                                                    
+LT[4] %f                                                                                                                      
+CPS[4] %f                                                                                                                     
+outputLine %s                                                                                                                 
+grossLine %s                                                                                                                  
+netLine %s                                                                                                                    
+bkgLine %s                                                                                                                    
+Result %f 0.0                                                                                                                 
+Value %f 10
+i %d 0                                                                                                                   
+sampleName[4] %s
+percent[4] %f
+totalCounts %d 0

@@ -1,0 +1,4 @@
+"High Voltage [V]" HV vcr
+"Acquisition Time" RT vcr
+"Energy [kev]" Energy vcr
+"Number of samples" samples vcr
