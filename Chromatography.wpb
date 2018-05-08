@@ -4,79 +4,63 @@
 # Load parameters and check we don't try too many samples (four should be plenty)                                             
 :input                                                                                                                        
 DataInput Parameters Chromatography.VAR                                                                                       
-
 # one to four samples                                                                                                         
-ShowMessage null 0 0 $samples                                                                                                
-
+ShowMessage dummy 0 0 $samples                                                                                                
 if ($samples>4)                                                                                                               
 {                                                                                                                             
-    ShowMessage null 0 0 "Too many samples. Try again with four or less."                                                      
-    Goto input                                                                                                                  
-}  
-                                                                                                                           
+  ShowMessage dummy 0 0 "Too many samples. Try again with four or less."                                                      
+  Goto input                                                                                                                  
+}                                                                                                                             
 if ($samples<1)                                                                                                               
 {                                                                                                                             
-    ShowMessage null 0 0 "Need at least one sample. Try again."                                                                
-    Goto input                                                                                                                  
+  ShowMessage dummy 0 0 "Need at least one sample. Try again."                                                                
+  Goto input                                                                                                                  
 }                                                                                                                             
                                                                                                                               
-# Repeat for each sample
-For i=1 TO $samples
-
-    SetPar sampleName[$i] "Strip $i"
+# Repeat this section                                                                                                         
+:Redo                                                                                                                         
                                                                                                                               
-    # Prepare spectrum                                                                                                            
-    ClearSpectrum $i                                                                                                               
-    DeleteAllRois $i                                                                                                               
-    SetSpectrumComment $i "Strip $i"
-    ShowWindow $i                                                                                   
-    SetHV $i $HV                                                                                                                   
-    # Use "normal" peak width factor of '1', automatically set by the software                                                    
-    MkNaiRoi $i $Energy 1                                                                                                          
-    PresetRealtime $i $RT                                                                                                          
-                                                                                                                                  
-    #showmessage null 0 0 "place sample $i in counter then press ok to proceed"                                                 
-                                                                                                                                  
-    # start counting and wait ('&') until counting finished before continuing with batch file                                     
-    startacquisition $i &                                                                                                          
-                                                                                                                                  
-    # get roi statistics about energy peak                                                                                        
-    integrate $i centroid[$i] fwhm[$i] net[$i] gros[$i] back[$i] $energy                                                                               
-                                                                                                                                  
-    sprintf grossline "gross=%.0f" $gros[$i]                                                                                          
-    sprintf netline " net=%.0f" $net[$i]                                                                                              
-    sprintf bkgline " bkg=%.0f" $back[$i]                                                                                             
-    strcat outputline $grossline $netline $bkgline                                                                                
-    showmessage null 0 0 $outputline 
-
-    eval $totalCounts+$net[$i] totalCounts %d                                                                                            
-                                                                                                                                  
-Next i                                                                                                                             
-
-# Evaluate percentages
-
-For i=1 TO $samples
-
-    eval $net[$i]/totalCounts percent[$i] %.8f
-
-Next i
- 
-eval ln($value) result %.3f                                                                                                   
+# Prepare spectrum                                                                                                            
+ClearSpectrum 1                                                                                                               
+DeleteAllRois 1                                                                                                               
+SetSpectrumComment 1 "Spectrum for strip 1"                                                                                   
+SetHV 1 $HV                                                                                                                   
+# Use "normal" peak width factor of '1', automatically set by the software                                                    
+MkNaiRoi 1 $Energy 1                                                                                                          
+PresetRealtime 1 $RT                                                                                                          
                                                                                                                               
-showmessage null 0 0 $result                                                                                                 
+#ShowMessage dummy 0 0 "Place sample 1 in counter \nthen press OK to proceed"                                                 
                                                                                                                               
-#datainputparameters data.var                                                                                                 
-variables                                                                                                                     
-hv %d 590                                                                                                                     
-rt %f 1                                                                                                                       
-energy %f 144                                                                                                                 
-time %b 0                                                                                                                     
+# Start counting and wait ('&') until counting finished before continuing with batch file                                     
+StartAcquisition 1 &                                                                                                          
+                                                                                                                              
+# Get ROI statistics about energy peak                                                                                        
+Integrate 1 Centroid FWHM Net Gros Back $Energy                                                                               
+                                                                                                                              
+Sprintf grossLine "Gross=%.0f" $Gros                                                                                          
+Sprintf netLine " Net=%.0f" $Net                                                                                              
+Sprintf bkgLine " Bkg=%.0f" $Back                                                                                             
+StrCat outputLine $grossLine $netLine $bkgLine                                                                                
+ShowMessage dummy 0 0 $outputLine                                                                                             
+                                                                                                                              
+#Goto Redo                                                                                                                    
+                                                                                                                              
+Eval ln($Value) Result %.3f                                                                                                   
+                                                                                                                              
+ShowMessage dummy 0 0 $Result                                                                                                 
+                                                                                                                              
+#DataInputParameters DATA.VAR                                                                                                 
+VARIABLES                                                                                                                     
+HV %d 590                                                                                                                     
+RT %f 1                                                                                                                       
+Energy %f 144                                                                                                                 
+Time %b 0                                                                                                                     
 samples %d 2                                                                                                                  
-centroid %f                                                                                                                   
-fwhm[4] %f                                                                                                                    
-net[4] %f                                                                                                                     
-gros[4] %f                                                                                                                    
-back[4] %f                                                                                                                    
+Centroid %f                                                                                                                   
+FWHM[4] %f                                                                                                                    
+Net[4] %f                                                                                                                     
+Gros[4] %f                                                                                                                    
+Back[4] %f                                                                                                                    
 LT[4] %f                                                                                                                      
 CPS[4] %f                                                                                                                     
 outputLine %s                                                                                                                 
@@ -84,8 +68,4 @@ grossLine %s
 netLine %s                                                                                                                    
 bkgLine %s                                                                                                                    
 Result %f 0.0                                                                                                                 
-Value %f 10
-i %d 0                                                                                                                   
-sampleName[4] %s
-percent[4] %f
-totalCounts %d 0
+Value %f 10                                                                                                                   
